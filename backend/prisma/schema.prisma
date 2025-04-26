@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Action {
+  id                 String            @id @default(uuid()) @map("_id")
+  createdAt          BigInt
+  updatedAt          BigInt?
+  name               String
+  description        String?
+  functionString     String
+  resourceTemplateId String?
+  resourceTemplate   ResourceTemplate? @relation(fields: [resourceTemplateId], references: [id])
+  NodeObject         NodeObject?       @relation(fields: [nodeObjectId], references: [id])
+  nodeObjectId       String?
+}
+
+model Trigger {
+  id                 String            @id @default(uuid()) @map("_id")
+  createdAt          BigInt
+  updatedAt          BigInt?
+  name               String
+  description        String?
+  functionString     String
+  resourceTemplateId String?
+  resourceTemplate   ResourceTemplate? @relation(fields: [resourceTemplateId], references: [id])
+  NodeObject         NodeObject[]
+}
+
+model Response {
+  id           String             @id @default(uuid()) @map("_id")
+  createdAt    BigInt
+  updatedAt    BigInt?
+  name         String
+  description  String?
+  platforms    ResponsePlatform[]
+  NodeObject   NodeObject?        @relation(fields: [nodeObjectId], references: [id])
+  nodeObjectId String?
+}
+
+model ResponsePlatform {
+  id            String                @id @default(uuid())
+  integrationId String?
+  build         Int?
+  responseId    String
+  response      Response              @relation(fields: [responseId], references: [id])
+  localeGroups  ResponseLocaleGroup[]
+}
+
+model ResponseLocaleGroup {
+  id            String              @id @default(uuid())
+  localeGroupId String
+  platformId    String
+  platform      ResponsePlatform    @relation(fields: [platformId], references: [id])
+  variations    ResponseVariation[]
+}
+
+model ResponseVariation {
+  id            String              @id @default(uuid())
+  name          String
+  responses     Json
+  localeGroupId String
+  localeGroup   ResponseLocaleGroup @relation(fields: [localeGroupId], references: [id])
+}
+
+model ResourceTemplate {
+  id             String    @id @default(uuid()) @map("_id")
+  createdAt      BigInt
+  updatedAt      BigInt?
+  name           String
+  description    String?
+  schema         Json
+  integrationId  String
+  functionString String
+  key            String
+  actions        Action[]
+  triggers       Trigger[]
+}
+
+model NodeObject {
+  id          String     @id @default(uuid()) @map("_id")
+  createdAt   BigInt
+  updatedAt   BigInt?
+  name        String
+  description String?
+  actions     Action[]   @relation
+  Trigger     Trigger?   @relation(fields: [triggerId], references: [id])
+  triggerId   String?
+  Response    Response[]
+}
